@@ -3,13 +3,32 @@ import type { Enemy } from './Enemy';
 
 const FUSE_TIME = 2.2;       // seconds before exploding
 const EXPLODE_RADIUS = 110;  // pixels
-const THROW_VX = 320;
-const THROW_VY = -480;
+export const GROUND_Y = 14 * 32 - 12; // landing surface y
 
 export interface Explosion {
   x: number;
   y: number;
-  timer: number; // counts down from 1
+  timer: number;
+}
+
+/** Simulate grenade arc and return array of {x,y} points + landing point */
+export function simulateArc(
+  startX: number, startY: number, vx: number, vy: number
+): { dots: {x: number; y: number}[]; landing: {x: number; y: number} } {
+  const dots: {x: number; y: number}[] = [];
+  const step = 0.06;
+  let t = 0;
+  let px = startX, py = startY;
+  let lpx = startX, lpy = startY;
+  while (t < 3) {
+    t += step;
+    px = startX + vx * t;
+    py = startY + vy * t + 0.5 * GRAVITY * t * t;
+    if (py >= GROUND_Y) { lpx = px; lpy = GROUND_Y; break; }
+    if (t % 0.18 < step) dots.push({ x: px, y: py });
+    lpx = px; lpy = py;
+  }
+  return { dots, landing: { x: lpx, y: lpy } };
 }
 
 export class Grenade {
@@ -22,11 +41,11 @@ export class Grenade {
   fuse = FUSE_TIME;
   rotation = 0;
 
-  constructor(x: number, y: number, facingRight: boolean) {
+  constructor(x: number, y: number, vx: number, vy: number) {
     this.x = x;
     this.y = y;
-    this.vx = facingRight ? THROW_VX : -THROW_VX;
-    this.vy = THROW_VY;
+    this.vx = vx;
+    this.vy = vy;
   }
 
   update(dt: number, enemies: Enemy[], explosions: Explosion[]) {
@@ -39,9 +58,8 @@ export class Grenade {
     this.rotation += this.vx * dt * 0.05;
 
     // Bounce off ground (row 14 = y:448)
-    const groundY = 14 * 32 - 12; // tile row 14 minus grenade height
-    if (this.y >= groundY) {
-      this.y = groundY;
+    if (this.y >= GROUND_Y) {
+      this.y = GROUND_Y;
       this.vy *= -0.35;
       this.vx *= 0.6;
     }

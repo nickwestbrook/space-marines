@@ -1,9 +1,9 @@
 import type { Rect } from '../physics';
 import { GRAVITY, resolveTileCollisions } from '../physics';
-import { isDown, wasPressed } from '../input';
+import { isDown, wasPressed, wasReleased } from '../input';
 import { isSolidTile } from '../level';
 import type { Projectile } from './Projectile';
-import { Grenade } from './Grenade';
+import { Grenade, simulateArc } from './Grenade';
 
 const SPEED = 220;
 const JUMP_VEL = -560;
@@ -38,6 +38,10 @@ export class Player {
   dead = false;
   grenades = MAX_GRENADES;
   grenadeCooldown = 0;
+  isCharging = false;
+  chargeTimer = 0;
+
+  static readonly MAX_CHARGE = 0.9; // seconds for full power
 
   get meleeHitbox(): Rect {
     return {
@@ -113,14 +117,27 @@ export class Player {
       });
     }
 
-    // Grenade throw
-    if (wasPressed('KeyC') && this.grenadeCooldown === 0 && this.grenades > 0) {
+    // Grenade throw — hold C to charge, release to throw
+    if (wasPressed('KeyC') && this.grenades > 0 && this.grenadeCooldown === 0) {
+      this.isCharging = true;
+      this.chargeTimer = 0;
+    }
+    if (this.isCharging && isDown('KeyC')) {
+      this.chargeTimer = Math.min(this.chargeTimer + dt, Player.MAX_CHARGE);
+    }
+    if (this.isCharging && wasReleased('KeyC')) {
+      const ratio = this.chargeTimer / Player.MAX_CHARGE;
+      const throwVx = (150 + ratio * 280) * (this.facingRight ? 1 : -1);
+      const throwVy = -350 - ratio * 180;
       this.grenadeCooldown = GRENADE_COOLDOWN;
       this.grenades--;
+      this.isCharging = false;
+      this.chargeTimer = 0;
       spawnGrenade(new Grenade(
         this.rect.x + this.rect.w / 2,
         this.rect.y + 10,
-        this.facingRight
+        throwVx,
+        throwVy,
       ));
     }
 
@@ -283,5 +300,52 @@ export class Player {
 
     ctx.globalAlpha = 1;
     ctx.restore();
+
+    // Grenade trajectory preview while charging
+    if (this.isCharging && this.grenades > 0) {
+      const ratio = this.chargeTimer / Player.MAX_CHARGE;
+      const throwVx = (150 + ratio * 280) * (this.facingRight ? 1 : -1);
+      const throwVy = -350 - ratio * 180;
+      const startX = this.rect.x + this.rect.w / 2;
+      const startY = this.rect.y + 10;
+      const { dots, landing } = simulateArc(startX, startY, throwVx, throwVy);
+
+      // Dots along arc
+      const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 120);
+      for (let i = 0; i < dots.length; i++) {
+        const d = dots[i];
+        const fade = (i + 1) / dots.length;
+        ctx.globalAlpha = fade * 0.7;
+        ctx.fillStyle = `hsl(${40 + ratio * 20},100%,70%)`;
+        ctx.beginPath();
+        ctx.arc(d.x - cameraX, d.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Landing zone circle
+      ctx.globalAlpha = 0.5 + 0.3 * pulse;
+      ctx.shadowColor = '#ff8800';
+      ctx.shadowBlur = 16;
+      ctx.strokeStyle = '#ffaa00';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(landing.x - cameraX, landing.y, 12 + ratio * 8, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+
+      // Charge power bar above player head
+      const barW = 36;
+      const barX = this.rect.x - cameraX + this.rect.w / 2 - barW / 2;
+      const barY = this.rect.y - 18;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(barX, barY, barW, 6);
+      const barColor = ratio < 0.5 ? '#ffdd00' : ratio < 0.85 ? '#ff8800' : '#ff3300';
+      ctx.shadowColor = barColor;
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = barColor;
+      ctx.fillRect(barX, barY, barW * ratio, 6);
+      ctx.shadowBlur = 0;
+    }
   }
 }
