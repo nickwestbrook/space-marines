@@ -3,6 +3,7 @@ import { GRAVITY, resolveTileCollisions } from '../physics';
 import { isDown, wasPressed } from '../input';
 import { isSolidTile } from '../level';
 import type { Projectile } from './Projectile';
+import { Grenade } from './Grenade';
 
 const SPEED = 220;
 const JUMP_VEL = -560;
@@ -11,9 +12,11 @@ const MELEE_RANGE = 50;
 const MELEE_COOLDOWN = 0.4;
 const SHOOT_COOLDOWN = 0.5;
 const MAX_AMMO = 10;
+const MAX_GRENADES = 5;
+const GRENADE_COOLDOWN = 0.5;
 const INVINCIBLE_DURATION = 0.8;
 
-export type PlayerAnim = 'idle' | 'run' | 'jump' | 'attack' | 'hurt' | 'dead';
+export type PlayerAnim= 'idle' | 'run' | 'jump' | 'attack' | 'hurt' | 'dead';
 
 export class Player {
   rect: Rect = { x: 64, y: 300, w: 28, h: 48 };
@@ -33,6 +36,8 @@ export class Player {
   meleeActive = false;
   meleeTimer = 0;
   dead = false;
+  grenades = MAX_GRENADES;
+  grenadeCooldown = 0;
 
   get meleeHitbox(): Rect {
     return {
@@ -57,12 +62,13 @@ export class Player {
     }
   }
 
-  update(dt: number, spawnProjectile: (p: Projectile) => void) {
+  update(dt: number, spawnProjectile: (p: Projectile) => void, spawnGrenade: (g: Grenade) => void) {
     if (this.dead) return;
 
     // Timers
     this.meleeCooldown = Math.max(0, this.meleeCooldown - dt);
     this.shootCooldown = Math.max(0, this.shootCooldown - dt);
+    this.grenadeCooldown = Math.max(0, this.grenadeCooldown - dt);
     this.invincibleTimer = Math.max(0, this.invincibleTimer - dt);
     this.meleeTimer = Math.max(0, this.meleeTimer - dt);
     this.meleeActive = this.meleeTimer > 0;
@@ -105,6 +111,17 @@ export class Player {
         fromPlayer: true,
         active: true,
       });
+    }
+
+    // Grenade throw
+    if (wasPressed('KeyC') && this.grenadeCooldown === 0 && this.grenades > 0) {
+      this.grenadeCooldown = GRENADE_COOLDOWN;
+      this.grenades--;
+      spawnGrenade(new Grenade(
+        this.rect.x + this.rect.w / 2,
+        this.rect.y + 10,
+        this.facingRight
+      ));
     }
 
     // Gravity

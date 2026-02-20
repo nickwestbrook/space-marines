@@ -10,7 +10,7 @@ type Screen = 'menu' | 'playing' | 'dead' | 'win';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('menu');
-  const [gameState, setGameState] = useState<GameState>({ hp: 3, ammo: 10, score: 0, status: 'playing' });
+  const [gameState, setGameState] = useState<GameState>({ hp: 3, ammo: 10, score: 0, grenades: 5, status: 'playing' });
   const engineRef = useRef<GameEngine | null>(null);
 
   const handleStateChange = useCallback((s: GameState) => {
@@ -22,21 +22,21 @@ function App() {
   const handleStart = () => {
     if (engineRef.current) engineRef.current.paused = false;
     setScreen('playing');
-    setGameState({ hp: 3, ammo: 10, score: 0, status: 'playing' });
+    setGameState({ hp: 3, ammo: 10, score: 0, grenades: 5, status: 'playing' });
   };
 
   const handleRetry = () => {
     engineRef.current?.reset();
     if (engineRef.current) engineRef.current.paused = false;
     setScreen('playing');
-    setGameState({ hp: 3, ammo: 10, score: 0, status: 'playing' });
+    setGameState({ hp: 3, ammo: 10, score: 0, grenades: 5, status: 'playing' });
   };
 
   return (
     <>
       <GameCanvas onStateChange={handleStateChange} engineRef={engineRef} />
       {screen === 'playing' && (
-        <HUD hp={gameState.hp} ammo={gameState.ammo} score={gameState.score} />
+        <HUD hp={gameState.hp} ammo={gameState.ammo} score={gameState.score} grenades={gameState.grenades} />
       )}
       {screen === 'menu' && <MainMenu onStart={handleStart} />}
       {screen === 'dead' && <GameOver score={gameState.score} onRetry={handleRetry} />}

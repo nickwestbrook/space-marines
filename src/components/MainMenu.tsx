@@ -14,6 +14,7 @@ export default function MainMenu({ onStart }: Props) {
         <div><kbd>Space / W / ↑</kbd> Jump (double-jump!)</div>
         <div><kbd>Z</kbd> Melee attack</div>
         <div><kbd>X</kbd> Shoot (10 ammo)</div>
+        <div><kbd>C</kbd> Grenade (5 grenades)</div>
       </div>
       <button onClick={onStart} style={btn}>▶ START MISSION</button>
     </div>

@@ -2,9 +2,10 @@ interface Props {
   hp: number;
   ammo: number;
   score: number;
+  grenades: number;
 }
 
-export default function HUD({ hp, ammo, score }: Props) {
+export default function HUD({ hp, ammo, score, grenades }: Props) {
   const maxHp = 3;
   return (
     <div style={{
@@ -49,20 +50,37 @@ export default function HUD({ hp, ammo, score }: Props) {
         KILLS: {score}
       </div>
 
-      {/* Ammo */}
-      <div style={{
-        background: 'rgba(0,10,30,0.7)',
-        border: '1px solid rgba(0,220,255,0.3)',
-        borderRadius: 8, padding: '6px 14px',
-        boxShadow: '0 0 12px rgba(0,180,255,0.2)',
-        display: 'flex', alignItems: 'center', gap: 8,
-      }}>
-        <span style={{ fontSize: 11, color: '#00cfff', letterSpacing: 2 }}>AMMO</span>
-        <span style={{
-          fontSize: 22, fontWeight: 'bold',
-          color: ammo > 3 ? '#00e5ff' : '#ff6060',
-          textShadow: `0 0 10px ${ammo > 3 ? '#00e5ff' : '#ff6060'}`,
-        }}>{ammo}</span>
+      {/* Ammo + Grenades */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{
+          background: 'rgba(0,10,30,0.7)',
+          border: '1px solid rgba(0,220,255,0.3)',
+          borderRadius: 8, padding: '6px 14px',
+          boxShadow: '0 0 12px rgba(0,180,255,0.2)',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <span style={{ fontSize: 11, color: '#00cfff', letterSpacing: 2 }}>AMMO</span>
+          <span style={{
+            fontSize: 22, fontWeight: 'bold',
+            color: ammo > 3 ? '#00e5ff' : '#ff6060',
+            textShadow: `0 0 10px ${ammo > 3 ? '#00e5ff' : '#ff6060'}`,
+          }}>{ammo}</span>
+        </div>
+        <div style={{
+          background: 'rgba(0,10,30,0.7)',
+          border: '1px solid rgba(255,160,0,0.4)',
+          borderRadius: 8, padding: '6px 14px',
+          boxShadow: '0 0 12px rgba(255,120,0,0.2)',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <span style={{ fontSize: 18 }}>💣</span>
+          <span style={{
+            fontSize: 22, fontWeight: 'bold',
+            color: grenades > 0 ? '#ffaa00' : '#ff6060',
+            textShadow: `0 0 10px ${grenades > 0 ? '#ffaa00' : '#ff6060'}`,
+            fontFamily: 'monospace',
+          }}>{grenades}</span>
+        </div>
       </div>
     </div>
   );

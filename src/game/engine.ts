@@ -6,6 +6,7 @@ import { Enemy } from './entities/Enemy';
 import type { Projectile } from './entities/Projectile';
 import { updateProjectiles, drawProjectiles } from './entities/Projectile';
 import { checkMeleeHits, checkProjectileHits } from './entities/Enemy';
+import { Grenade, Explosion, drawExplosions, updateExplosions } from './entities/Grenade';
 
 export type GameStatus = 'playing' | 'dead' | 'win';
 
@@ -13,6 +14,7 @@ export interface GameState {
   hp: number;
   ammo: number;
   score: number;
+  grenades: number;
   status: GameStatus;
 }
 
@@ -24,6 +26,8 @@ export class GameEngine {
   private player!: Player;
   private enemies: Enemy[] = [];
   private projectiles: Projectile[] = [];
+  private grenades: Grenade[] = [];
+  private explosions: Explosion[] = [];
   private camera = createCamera();
   private onStateChange: (s: GameState) => void;
   private lastEmittedState = '';
@@ -40,6 +44,8 @@ export class GameEngine {
   reset() {
     this.player = new Player();
     this.projectiles = [];
+    this.grenades = [];
+    this.explosions = [];
     this.lastEmittedState = '';
     this.paused = true;
     this.enemies = [
@@ -81,9 +87,13 @@ export class GameEngine {
     this.projectiles.push(p);
   };
 
+  private spawnGrenade = (g: Grenade) => {
+    this.grenades.push(g);
+  };
+
   private update(dt: number) {
     const p = this.player;
-    p.update(dt, this.spawnProjectile);
+    p.update(dt, this.spawnProjectile, this.spawnGrenade);
 
     for (const e of this.enemies) {
       e.update(dt, p, this.spawnProjectile);
@@ -93,6 +103,14 @@ export class GameEngine {
     updateProjectiles(this.projectiles, dt);
     this.projectiles = this.projectiles.filter(p => p.active);
 
+    // Update grenades
+    for (const g of this.grenades) {
+      g.update(dt, this.enemies, this.explosions);
+    }
+    this.grenades = this.grenades.filter(g => g.active);
+    this.enemies = this.enemies.filter(e => e.active);
+    this.explosions = updateExplosions(this.explosions, dt);
+
     checkMeleeHits(p, this.enemies);
     checkProjectileHits(p, this.enemies, this.projectiles);
 
@@ -101,10 +119,10 @@ export class GameEngine {
     // Check win: reach end of level
     const status: GameStatus = p.dead ? 'dead' : p.rect.x + p.rect.w >= LEVEL_WIDTH - 64 ? 'win' : 'playing';
 
-    const stateKey = `${p.hp},${p.ammo},${p.score},${status}`;
+    const stateKey = `${p.hp},${p.ammo},${p.score},${p.grenades},${status}`;
     if (stateKey !== this.lastEmittedState) {
       this.lastEmittedState = stateKey;
-      this.onStateChange({ hp: p.hp, ammo: p.ammo, score: p.score, status });
+      this.onStateChange({ hp: p.hp, ammo: p.ammo, score: p.score, grenades: p.grenades, status });
     }
   }
 
@@ -198,6 +216,8 @@ export class GameEngine {
 
     drawTiles(ctx, cx);
     drawProjectiles(ctx, this.projectiles, cx);
+    for (const g of this.grenades) g.draw(ctx, cx);
+    drawExplosions(ctx, this.explosions, cx);
     for (const e of this.enemies) e.draw(ctx, cx);
     this.player.draw(ctx, cx);
 
