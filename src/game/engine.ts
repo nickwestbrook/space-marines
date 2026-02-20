@@ -1,5 +1,5 @@
 import { initInput, clearJustPressed } from './input';
-import { drawTiles, LEVEL_WIDTH, LEVEL_HEIGHT } from './level';
+import { drawTiles, LEVEL_WIDTH } from './level';
 import { createCamera, updateCamera } from './camera';
 import { Player } from './entities/Player';
 import { Enemy } from './entities/Enemy';

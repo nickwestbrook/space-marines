@@ -98,7 +98,7 @@ export class Enemy {
   }
 
   private updateGunner(
-    dt: number, player: Player, dx: number, dist: number,
+    _dt: number, player: Player, dx: number, dist: number,
     spawnProjectile: (p: Projectile) => void
   ) {
     this.vx = 0;
