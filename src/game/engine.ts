@@ -6,7 +6,8 @@ import { Enemy } from './entities/Enemy';
 import type { Projectile } from './entities/Projectile';
 import { updateProjectiles, drawProjectiles } from './entities/Projectile';
 import { checkMeleeHits, checkProjectileHits } from './entities/Enemy';
-import { Grenade, Explosion, drawExplosions, updateExplosions } from './entities/Grenade';
+import { Grenade, drawExplosions, updateExplosions } from './entities/Grenade';
+import type { Explosion } from './entities/Grenade';
 
 export type GameStatus = 'playing' | 'dead' | 'win';
 
